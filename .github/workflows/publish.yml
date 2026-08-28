@@ -1,0 +1,39 @@
+name: Publish product
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out product repository
+        uses: actions/checkout@v4
+
+      - name: Check out GISC website
+        uses: actions/checkout@v4
+        with:
+          repository: hbbq/gisc-website
+          token: ${{ secrets.GISC_PUBLISH_TOKEN }}
+          path: website
+
+      - name: Publish OSB-1 product package
+        working-directory: website
+        run: |
+          rm -rf src/products/osb-1
+          mkdir -p src/products/osb-1
+          cp -a ../product/. src/products/osb-1/
+
+          git config user.name "GISC Publishing"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A src/products/osb-1
+
+          if git diff --cached --quiet; then
+            echo "No publication changes."
+            exit 0
+          fi
+
+          git commit -m "Publish OSB-1 product"
+          git push origin HEAD
